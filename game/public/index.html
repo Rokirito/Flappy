@@ -52,12 +52,12 @@
 
     function create()
     {
+//Fondo
       this.fondo = this.add.tileSprite(0,256,288 * 20, 512, "fondo");
       this.physics.world.setBounds(0,0, 2000,512);
 
-//Agregando movimiento con cursors
+//Agregando movimiento con cursors y Animaciones
       this.cursor = this.input.keyboard.createCursorKeys();
-
       if(!this.anims.get("fly)")){
         this.anims.create({
           key: "fly",
@@ -85,44 +85,36 @@
       this.cursor = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
       this.flappy.body.angularVelocity = 100;
 
-//Creando obstaculos
-
-
-      function createTubos(){
-        this.tubos = this.physics.add.group();
-        this.tuboUp = this.tubos.create(250, 0, "tubos").setAngle(180);
-        this.tuboUp.body.allowGravity = false;
-        this.tuboUp.setVelocityX(-200);
-        this.tuboUp.body.immovable = true;
-        //Tubo Abajo
-        this.tuboBot = this.tubos.create(250,410, "tubos");
-        this.tuboBot.body.allowGravity = false;
-        this.tuboBot.setVelocityX(-200);
-        this.tuboBot.body.immovable = true;
-
-        this.container = this.add.container(100,0, [this.tuboUp, this.tuboBot]);
-        this.physics.add.overlap(this.flappy, this.container, hitObject, null, this);
-        this.physics.add.collider(this.flappy, this.tubos, hitObject, null, this);
-        console.log("Se creo Obstaculo");
-      }
-
-      this.timer = setInterval(createTubos.bind(this), 1500);
-        function hitTubos(){
-          console.log("Funcion");
-
-        }
-//Floor
+//Piso
       this.base = this.physics.add.group();
       this.floor1 = this.base.create(168,480, "base");
       this.floor1.body.allowGravity = false;
       this.floor1.body.immovable = true;
 
+//Timers
+      this.timerTubos = setInterval(createTubos.bind(this), 1200);
+      this.timerStart = setTimeout(start.bind(this), 800);
+
+//Variables del Score
+      this.x1 = 130;
+      this.x2 = 160;
+      this.gameScore1 = 1;
+      this.gameScore2 = 1;
+      this.score1 = this.add.sprite(this.x1, 20, "0");
+      this.score2 = this.add.sprite(this.x2, 20, "0");
+
+//Funciones
+//Funcion para inicio de score1
+      function start(){
+      this.timerScore = setInterval(changeScore.bind(this), 1200);
+      }
 //Funcion para Game Over con Tubo
       function hitObject(){
         console.log("Chocoo");
         this.flappy.anims.play("stop", true);
         this.gameOver = this.add.image(144, 236, "gOver");
-        clearInterval(this.timer);
+        clearInterval(this.timerTubos);
+        clearInterval(this.timerScore);
         this.physics.world.pause();
       }
 
@@ -131,22 +123,51 @@
         console.log("Chocoo");
         this.flappy.anims.play("stop", true);
         this.gameOver = this.add.image(144, 236, "gOver");
-        clearInterval(this.timer);
+        clearInterval(this.timerTubos);
+        clearInterval(this.timerScore);
         this.physics.world.pause();
       }
 
+//Funcion para Cambiar el Score
+      function changeScore(){
+        this.score2.destroy();
+        this.setScore2 = parseInt(this.gameScore2);
+        this.score2 = this.add.sprite(this.x2, 20, this.setScore2);
+        this.gameScore2 += 1;
+        console.log("Cambio Score");
+        if(this.gameScore2 == 11 ){
+          this.score2.destroy();
+          this.score2 = this.add.sprite(this.x2, 20, "0");
+          this.score1.destroy();
+          this.setScore1 = parseInt(this.gameScore1);
+          this.score1 = this.add.sprite(this.x1, 20, this.setScore1);
+          this.gameScore1 += 1;
+          this.gameScore2 = 1;
+        }
+      }
+
+//Funcion para  obstaculos
+      function createTubos(){
+        this.tubos = this.physics.add.group();
+        this.tuboUp = this.tubos.create(320, 0, "tubos").setAngle(180);
+        this.tuboUp.body.allowGravity = false;
+        this.tuboUp.setVelocityX(-200);
+        this.tuboUp.body.immovable = true;
+        //Tubo Abajo
+        this.tuboBot = this.tubos.create(320,410, "tubos");
+        this.tuboBot.body.allowGravity = false;
+        this.tuboBot.setVelocityX(-200);
+        this.tuboBot.body.immovable = true;
+
+        this.container = this.add.container(0,0, [this.tuboUp, this.tuboBot]);
+        this.physics.add.overlap(this.flappy, this.container, hitObject, null, this);
+        this.physics.add.collider(this.flappy, this.tubos, hitObject, null, this);
+        console.log("Se creo Obstaculo");
+      }
+
 //Colisiones
-      this.physics.add.overlap(this.flappy, this.container, hitObject, null, this);
-      this.physics.add.collider(this.flappy, this.tubos, hitObject, null, this);
       this.physics.add.collider(this.flappy, this.base, hitFloor, null, this);
       this.physics.add.overlap(this.flappy, this.base, hitFloor, null, this);
-
-//Variables del Score
-      this.x1 = 130;
-      this.x2 = 160;
-      this.score1 = this.add.sprite(this.x1, 20, "0");
-      this.score2 = this.add.sprite(this.x2, 20, "0");
-      timeText = this.add.text(10,10);
   }
 
     function update(time, delta)
@@ -156,31 +177,7 @@
         this.flappy.setAngle(300);
         console.log("Presionaste Espacio");
       }
-
-
-    timeText.setText('Time: ' + time + '\nDelta: ' + delta);
-
-//Contador Score
-      this.scoreEvent = this.time.addEvent({
-        delay: 2000,
-        loop: true,
-        callback: function scoreGo(){
-//          this.container.setVisible(false);
-          for(this.gameScore = 1; this.gameScore> 0;this.gameScore++){
-          this.score2.destroy();
-          this.gameScore = 1;
-          this.setScore = parseInt(this.gameScore);
-          this.score2 = this.add.sprite(this.x2, 20, this.setScore);
-          console.log("Score");
-          break;
-          }
-        },
-        callbackScope: this,
-      });
     }
-
-
-
   </script>
   </body>
 </html>
